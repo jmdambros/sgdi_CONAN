@@ -1,33 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Editar Demanda</h2>
+<h2>Editar Demanda #{{ demanda['id'] }}</h2>
 
-
-<form method="POST" action="/editar/{{ demanda[0] }}">
+<form method="POST">
     <div>
         <label>Título:</label><br>
-        <input type="text" name="titulo" value="{{ demanda[1] }}" size="50">
-    </div>
-    <br>
+        <input type="text" name="titulo" value="{{ demanda['titulo'] }}" size="50">
+    </div><br>
     
     <div>
         <label>Descrição:</label><br>
-        <textarea name="descricao" rows="5" cols="50">{{ demanda[2] }}</textarea>
-    </div>
-    <br>
+        <textarea name="descricao" rows="5" cols="50">{{ demanda['descricao'] }}</textarea>
+    </div><br>
+
+    <div style="background: #f9f9f9; padding: 10px; border: 1px solid #ddd; display: inline-block;">
+        <label><strong>Prioridade (Imutável):</strong></label>
+        <span>{{ demanda['prioridade_nome'] }}</span>
+        <p style="font-size: 0.8em; color: gray; margin: 5px 0 0 0;">
+            * A prioridade não pode ser alterada após a criação da demanda.
+        </p>
+    </div><br><br>
     
     <div>
         <label>Solicitante:</label><br>
-        <input type="text" name="solicitante" value="{{ demanda[3] }}">
-    </div>
-    <br>
-    
-    <div>
-        <label>Data de Criação:</label><br>
-        <input type="text" value="{{ demanda[4] }}" disabled>
-    </div>
-    <br>
+        <input type="text" name="solicitante" value="{{ demanda['solicitante'] }}">
+    </div><br>
     
     <button type="submit">Atualizar</button>
     <a href="/"><button type="button">Cancelar</button></a>

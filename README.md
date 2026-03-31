@@ -16,16 +16,8 @@ Acesse: http://localhost:5000
 - Criar demandas
 - Editar demandas
 - Deletar demandas
+- Classificsar prioridade da demanda
 - Visualizar detalhes
 - Comentários
 
 ---
-
-**TODO:**
-- Adicionar prioridades
-- Melhorar busca
-- Adicionar usuários
-
----
-
-*Desenvolvido em 2024*

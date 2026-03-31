@@ -1,29 +1,28 @@
 {% extends "base.html" %}
-
 {% block content %}
 <h2>Nova Demanda</h2>
-
 <form method="POST" action="/nova_demanda">
     <div>
         <label>Título:</label><br>
-        <input type="text" name="titulo" size="50">
-    </div>
-    <br>
-    
+        <input type="text" name="titulo" size="50" required>
+    </div><br>
     <div>
         <label>Descrição:</label><br>
         <textarea name="descricao" rows="5" cols="50"></textarea>
-    </div>
-    <br>
-    
+    </div><br>
+    <div>
+        <label>Prioridade:</label><br>
+        <select name="id_prioridade" required>
+            <option value="1">Baixa</option>
+            <option value="2">Média</option>
+            <option value="3">Alta</option>
+        </select>
+    </div><br>
     <div>
         <label>Solicitante:</label><br>
         <input type="text" name="solicitante">
-    </div>
-    <br>
-    
+    </div><br>
     <button type="submit">Salvar</button>
     <a href="/"><button type="button">Cancelar</button></a>
 </form>
-
 {% endblock %}
