@@ -17,11 +17,28 @@ def index():
         SELECT d.*, p.valor as prioridade_nome 
         FROM demandas d 
         LEFT JOIN prioridades p ON d.id_prioridade = p.id
-        ORDER BY p.peso DESC, d.id ASC
+        ORDER BY p.peso DESC, d.data_criacao ASC
+        LIMIT 10
     '''
     demandas = conn.execute(query).fetchall()
+    total = conn.execute('SELECT COUNT(*) FROM demandas').fetchone()[0]
     conn.close()
-    return render_template('index.html', demandas=demandas)
+    return render_template('index.html', demandas=demandas, total=total, offset=10)
+
+@app.route('/mais_demandas')
+def mais_demandas():
+    offset = int(request.args.get('offset', 10))
+    conn = get_db()
+    query = '''
+        SELECT d.*, p.valor as prioridade_nome 
+        FROM demandas d 
+        LEFT JOIN prioridades p ON d.id_prioridade = p.id
+        ORDER BY p.peso DESC, d.data_criacao ASC
+        LIMIT 10 OFFSET ?
+    '''
+    demandas = conn.execute(query, (offset,)).fetchall()
+    conn.close()
+    return render_template('linhas_demandas.html', demandas=demandas)
 
 @app.route('/nova_demanda', methods=['GET', 'POST'])
 def nova_demanda():

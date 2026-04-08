@@ -11,10 +11,9 @@
 
 <h2>Lista de Demandas</h2>
 
-<table border="1" cellpadding="10" cellspacing="0" width="100%">
+<table border="1" cellpadding="10" cellspacing="0" width="100%" id="tabela-demandas">
     <thead>
         <tr bgcolor="#cccccc">
-            <th>ID</th>
             <th>Prioridade</th>
             <th>Título</th>
             <th>Solicitante</th>
@@ -22,10 +21,9 @@
             <th>Ações</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="corpo-tabela">
         {% for demanda in demandas %}
         <tr>
-            <td>{{ demanda['id'] }}</td>
             <td align="center">
                 {% if demanda['prioridade_nome'] == 'Alta' %}
                     <b style="color:red;">{{ demanda['prioridade_nome'] }}</b>
@@ -45,7 +43,7 @@
             </td>
         </tr>
         {% endfor %}
-        
+
         {% if not demandas %}
         <tr>
             <td colspan="6" align="center">Nenhuma demanda encontrada.</td>
@@ -55,6 +53,32 @@
 </table>
 
 <br>
-<a href="/nova_demanda"><button>+ Nova Demanda</button></a>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+    <a href="/nova_demanda"><button>+ Nova Demanda</button></a>
+
+    {% if offset < total %}
+    <button id="btn-ver-mais" onclick="verMais({{ offset }}, {{ total }})">Ver mais</button>
+    {% endif %}
+</div>
+
+
+<script>
+function verMais(offset, total) {
+    fetch('/mais_demandas?offset=' + offset)
+        .then(r => r.text())
+        .then(html => {
+            document.getElementById('corpo-tabela').insertAdjacentHTML('beforeend', html);
+
+            const novoOffset = offset + 10;
+            if (novoOffset >= total) {
+                document.getElementById('btn-ver-mais').style.display = 'none';
+            } else {
+                document.getElementById('btn-ver-mais').setAttribute('onclick', `verMais(${novoOffset}, ${total})`);
+            }
+        });
+}
+</script>
+
 
 {% endblock %}
