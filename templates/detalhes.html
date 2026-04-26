@@ -9,7 +9,6 @@
     <p><strong>Solicitante:</strong> {{ demanda['solicitante'] }}</p>
     <p><strong>Data de Criação:</strong> {{ demanda['data_criacao'] }}</p>
     <br>
-    <a href="/editar/{{ demanda['id'] }}"><button>Editar</button></a>
     <a href="/"><button>Voltar</button></a>
 </div>
 
@@ -23,7 +22,6 @@
 
 <h4>Adicionar Comentário</h4>
 <form method="POST" action="/adicionar_comentario/{{ demanda['id'] }}">
-    <input type="text" name="autor" placeholder="Seu nome" required><br><br>
     <textarea name="comentario" rows="4" cols="50" placeholder="Seu comentário" required></textarea><br><br>
     <button type="submit">Enviar Comentário</button>
 </form>

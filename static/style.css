@@ -38,6 +38,8 @@ body {
     margin: 20px auto;
     background: white;
     padding: 30px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.39); 
+    border-radius: 8px;
 }
 
 .alert {

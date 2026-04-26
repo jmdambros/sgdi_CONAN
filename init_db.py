@@ -37,6 +37,17 @@ def init_db():
     );
     ''')
 
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        senha_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        criado_em TEXT DEFAULT (strftime('%d/%m/%Y %H:%M', 'now', 'localtime'))
+    );
+    ''')
+    
     cursor.execute("SELECT COUNT(*) FROM prioridades")
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO prioridades (peso, valor) VALUES (1, 'Baixa'), (2, 'Média'), (3, 'Alta')")

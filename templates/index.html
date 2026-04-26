@@ -5,7 +5,7 @@
 {% if request.args.get('q') %}
     <div style="background: #e9f5ff; padding: 10px; margin-bottom: 15px; border-left: 5px solid #2196F3;">
         Resultados para a busca: <strong>{{ request.args.get('q') }}</strong> 
-        | <a href="/">Ver Todas</a>
+        <a href="/" style="float: right;">Retornar à página inicial</a>
     </div>
 {% endif %}
 
@@ -38,7 +38,6 @@
             <td>{{ demanda['data_criacao'] }}</td>
             <td>
                 <a href="/detalhes/{{ demanda['id'] }}">Ver</a> |
-                <a href="/editar/{{ demanda['id'] }}">Editar</a> |
                 <a href="/deletar/{{ demanda['id'] }}" style="color:red;" onclick="return confirm('Excluir esta demanda?')">Deletar</a>
             </td>
         </tr>
@@ -55,11 +54,13 @@
 <br>
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-    <a href="/nova_demanda"><button>+ Nova Demanda</button></a>
-
     {% if offset < total %}
     <button id="btn-ver-mais" onclick="verMais({{ offset }}, {{ total }})">Ver mais</button>
+    {% else %}
+    <span></span>
     {% endif %}
+
+    <a href="/nova_demanda"><button>+ Nova Demanda</button></a>
 </div>
 
 
