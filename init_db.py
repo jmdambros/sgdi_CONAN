@@ -21,6 +21,8 @@ def init_db():
         descricao TEXT,
         solicitante TEXT,
         data_criacao TEXT,
+        prazo TEXT,
+        status TEXT DEFAULT 'Aberta',
         id_prioridade INTEGER,
         FOREIGN KEY (id_prioridade) REFERENCES prioridades(id)
     );

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2 style="margin: 0;">Dashboard Gerencial</h2>
+    <span style="font-size: 13px; color: #888;">Dados em tempo real</span>
+</div>
+
+<!-- KPI CARDS -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px;">
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; border-left: 4px solid #333;">
+        <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Total de Demandas</div>
+        <div style="font-size: 36px; font-weight: 700; color: #333;">{{ total }}</div>
+    </div>
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; border-left: 4px solid #2196F3;">
+        <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Abertas</div>
+        <div style="font-size: 36px; font-weight: 700; color: #2196F3;">{{ abertas }}</div>
+        <div style="font-size: 12px; color: #aaa; margin-top: 4px;">{{ pct_abertas }}% do total</div>
+    </div>
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; border-left: 4px solid #4CAF50;">
+        <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Concluídas</div>
+        <div style="font-size: 36px; font-weight: 700; color: #4CAF50;">{{ concluidas }}</div>
+        <div style="font-size: 12px; color: #aaa; margin-top: 4px;">{{ pct_concluidas }}% do total</div>
+    </div>
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; border-left: 4px solid #f44336;">
+        <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Atrasadas</div>
+        <div style="font-size: 36px; font-weight: 700; color: #f44336;">{{ atrasadas }}</div>
+        <div style="font-size: 12px; color: #aaa; margin-top: 4px;">{{ pct_atrasadas }}% do total</div>
+    </div>
+
+</div>
+
+<!-- ATRASADAS SECTION -->
+<div style="background: #FCEBEB; border-radius: 8px; padding: 20px; margin-bottom: 28px; border-left: 4px solid #f44336;">
+    <div style="font-size: 12px; color: #A32D2D; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+        <span>⚠ Demandas Atrasadas
+            <span style="background: #f44336; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px;">{{ atrasadas }} em atraso</span>
+        </span>
+        <a href="/exportar/atrasadas" style="background: #4CAF50; color: white; font-size: 12px; padding: 6px 14px; border-radius: 6px; text-decoration: none;">⬇ Exportar Excel</a>
+    </div>
+    {% if atrasadas_list %}
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+                <tr style="border-bottom: 1px solid #F09595;">
+                    <th style="text-align: left; padding: 6px 0; color: #A32D2D; font-weight: 500;">Título</th>
+                    <th style="text-align: left; padding: 6px 0; color: #A32D2D; font-weight: 500;">Solicitante</th>
+                    <th style="text-align: left; padding: 6px 0; color: #A32D2D; font-weight: 500;">Prazo</th>
+                    <th style="text-align: left; padding: 6px 0; color: #A32D2D; font-weight: 500;">Prioridade</th>
+                    <th style="padding: 6px 0;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in atrasadas_list %}
+                <tr style="border-bottom: 1px solid #F7C1C1;">
+                    <td style="padding: 8px 0; color: #333;">{{ d['titulo'] }}</td>
+                    <td style="padding: 8px 0; color: #666;">{{ d['solicitante'] }}</td>
+                    <td style="padding: 8px 0; color: #A32D2D; font-weight: 500;">{{ d['prazo'] }}</td>
+                    <td style="padding: 8px 0; color: #666;">{{ d['prioridade_nome'] }}</td>
+                    <td style="padding: 8px 0;"><a href="/detalhes/{{ d['id'] }}" style="font-size: 12px; color: #A32D2D;">Ver</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div style="color: #A32D2D; font-size: 14px;">Nenhuma demanda atrasada.</div>
+    {% endif %}
+</div>
+
+<!-- SECOND ROW -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px;">
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px;">
+        <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Tempo Médio de Resolução</div>
+        {% if tempo_medio %}
+            <div style="font-size: 36px; font-weight: 700; color: #333;">{{ tempo_medio }} <span style="font-size: 16px; font-weight: 400; color: #888;">dias</span></div>
+            <div style="font-size: 12px; color: #aaa; margin-top: 4px;">Apenas demandas concluídas</div>
+        {% else %}
+            <div style="font-size: 16px; color: #aaa; margin-top: 8px;">Nenhuma demanda concluída ainda</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- BOTTOM ROW -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px;">
+        <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
+            Demandas Críticas
+            <span style="background: #FCEBEB; color: #A32D2D; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px;">{{ criticas|length }} abertas</span>
+        </div>
+        {% if criticas %}
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <th style="text-align: left; padding: 6px 0; color: #888; font-weight: 500;">Título</th>
+                        <th style="text-align: left; padding: 6px 0; color: #888; font-weight: 500;">Solicitante</th>
+                        <th style="text-align: left; padding: 6px 0; color: #888; font-weight: 500;">Data</th>
+                        <th style="padding: 6px 0;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in criticas %}
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px 0;">{{ d['titulo'] }}</td>
+                        <td style="padding: 8px 0; color: #666;">{{ d['solicitante'] }}</td>
+                        <td style="padding: 8px 0; color: #666;">{{ d['data_criacao'] }}</td>
+                        <td style="padding: 8px 0;"><a href="/detalhes/{{ d['id'] }}" style="font-size: 12px; color: #2196F3;">Ver</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="color: #aaa; font-size: 14px;">Nenhuma demanda crítica aberta.</div>
+        {% endif %}
+    </div>
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px;">
+        <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">Abertas por Responsável</div>
+        {% if por_responsavel %}
+            {% set max_val = por_responsavel[0]['total'] %}
+            {% for row in por_responsavel %}
+            <div style="margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+                    <span>{{ row['solicitante'] }}</span>
+                    <span style="font-weight: 500;">{{ row['total'] }}</span>
+                </div>
+                <div style="background: #e0e0e0; border-radius: 4px; height: 6px;">
+                    <div style="background: #2196F3; border-radius: 4px; height: 6px; width: {{ (row['total'] / max_val * 100)|int }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="color: #aaa; font-size: 14px;">Nenhuma demanda aberta.</div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
