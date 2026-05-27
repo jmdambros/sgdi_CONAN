@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 import sqlite3
 import hashlib
 import os
+from logger import log_action
 
 auth = Blueprint('auth', __name__)
 
@@ -52,6 +53,8 @@ def register():
         conn.commit()
         conn.close()
 
+        log_action('sistema', 'REGISTRO', f'Novo usuário: {nome} ({email})', request.remote_addr)
+
         flash('Conta criada com sucesso! Faça login.', 'success')
         return redirect(url_for('auth.login'))
 
@@ -69,17 +72,21 @@ def login():
         conn.close()
 
         if not user:
+            log_action('desconhecido', 'LOGIN_FALHOU', f'Tentativa com e-mail: {email}', request.remote_addr)
             flash('E-mail ou senha inválidos.', 'danger')
             return render_template('login.html')
 
         hashed, _ = hash_password(password, user['salt'])
         if hashed != user['senha_hash']:
+            log_action(user['nome'], 'LOGIN_FALHOU', f'Senha incorreta para: {email}', request.remote_addr)
             flash('E-mail ou senha inválidos.', 'danger')
             return render_template('login.html')
 
         session['user_id'] = user['id']
         session['user_nome'] = user['nome']
         session['user_email'] = user['email']
+
+        log_action(user['nome'], 'LOGIN', f'Usuário: {email}', request.remote_addr)
 
         flash(f'Bem-vindo, {user["nome"]}!', 'success')
         return redirect(url_for('index'))
@@ -89,6 +96,12 @@ def login():
 
 @auth.route('/logout')
 def logout():
+    log_action(
+        session.get('user_nome', 'desconhecido'),
+        'LOGOUT',
+        f'Usuário: {session.get("user_email")}',
+        request.remote_addr
+    )
     session.clear()
     flash('Você saiu da sua conta.', 'info')
     return redirect(url_for('auth.login'))

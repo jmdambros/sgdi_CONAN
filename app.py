@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime, date
 from functools import wraps
 from auth import auth
+from logger import log_action
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 import io
@@ -70,17 +71,27 @@ def nova_demanda():
         titulo = request.form['titulo']
         descricao = request.form['descricao']
         id_prio = request.form['id_prioridade']
+        status = request.form.get('status', 'Aberta')
         prazo = request.form['prazo'] or None
 
         solicitante = session['user_nome']
 
         conn = get_db()
-        conn.execute(
-            "INSERT INTO demandas (titulo, descricao, solicitante, data_criacao, id_prioridade, prazo) VALUES (?, ?, ?, ?, ?, ?)",
-            (titulo, descricao, solicitante, datetime.now().strftime("%d/%m/%Y %H:%M"), id_prio, prazo)
+        cursor = conn.execute(
+            "INSERT INTO demandas (titulo, descricao, solicitante, data_criacao, id_prioridade, status, prazo) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (titulo, descricao, solicitante, datetime.now().strftime("%d/%m/%Y %H:%M"), id_prio, status, prazo)
         )
         conn.commit()
+        demanda_id = cursor.lastrowid
         conn.close()
+
+        log_action(
+            session.get('user_nome', 'sistema'),
+            'CRIAR_DEMANDA',
+            f'Demanda: {titulo} (id={demanda_id})',
+            request.remote_addr
+        )
+
         flash('Demanda criada!', 'success')
         return redirect('/')
 
@@ -94,9 +105,19 @@ def nova_demanda():
 @login_required
 def deletar(id):
     conn = get_db()
+    demanda = conn.execute('SELECT titulo FROM demandas WHERE id=?', (id,)).fetchone()
+    titulo = demanda['titulo'] if demanda else f'id={id}'
     conn.execute('DELETE FROM demandas WHERE id=?', (id,))
     conn.commit()
     conn.close()
+
+    log_action(
+        session.get('user_nome', 'sistema'),
+        'DELETAR_DEMANDA',
+        f'Demanda: {titulo} (id={id})',
+        request.remote_addr
+    )
+
     return redirect('/')
 
 
@@ -138,12 +159,21 @@ def detalhes(id):
 def adicionar_comentario(demanda_id):
     conn = get_db()
     autor = session['user_nome']
+    comentario = request.form['comentario']
     conn.execute(
         "INSERT INTO comentarios (demanda_id, comentario, autor, data) VALUES (?, ?, ?, ?)",
-        (demanda_id, request.form['comentario'], autor, datetime.now().strftime("%d/%m/%Y %H:%M"))
+        (demanda_id, comentario, autor, datetime.now().strftime("%d/%m/%Y %H:%M"))
     )
     conn.commit()
     conn.close()
+
+    log_action(
+        session.get('user_nome', 'sistema'),
+        'ADICIONAR_COMENTARIO',
+        f'Comentário na demanda id={demanda_id}',
+        request.remote_addr
+    )
+
     return redirect(f'/detalhes/{demanda_id}')
 
 
@@ -152,51 +182,76 @@ def adicionar_comentario(demanda_id):
 def dashboard():
     conn = get_db()
 
-    total = conn.execute('SELECT COUNT(*) FROM demandas').fetchone()[0]
-    abertas = conn.execute("SELECT COUNT(*) FROM demandas WHERE status = 'Aberta'").fetchone()[0]
-    concluidas = conn.execute("SELECT COUNT(*) FROM demandas WHERE status = 'Concluída'").fetchone()[0]
+    f_de          = request.args.get('de', '').strip()
+    f_ate         = request.args.get('ate', '').strip()
+    f_responsavel = request.args.get('responsavel', '').strip()
+    f_prioridade  = request.args.get('prioridade', '').strip()
+    f_status      = request.args.get('status', '').strip()
 
-    criticas = conn.execute("""
-        SELECT d.*, p.valor as prioridade_nome 
+    conditions = []
+    params = []
+
+    if f_de:
+        conditions.append("substr(d.data_criacao,7,4)||'-'||substr(d.data_criacao,4,2)||'-'||substr(d.data_criacao,1,2) >= ?")
+        params.append(f_de)
+    if f_ate:
+        conditions.append("substr(d.data_criacao,7,4)||'-'||substr(d.data_criacao,4,2)||'-'||substr(d.data_criacao,1,2) <= ?")
+        params.append(f_ate)
+    if f_responsavel:
+        conditions.append("d.solicitante = ?")
+        params.append(f_responsavel)
+    if f_prioridade:
+        conditions.append("p.valor = ?")
+        params.append(f_prioridade)
+    if f_status:
+        conditions.append("d.status = ?")
+        params.append(f_status)
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    and_or_where = "AND" if where else "WHERE"
+
+    base_query = f"""
+        SELECT d.*, p.valor as prioridade_nome
         FROM demandas d
         LEFT JOIN prioridades p ON d.id_prioridade = p.id
-        WHERE p.valor = 'Alta' AND d.status = 'Aberta'
-        ORDER BY d.data_criacao ASC
-    """).fetchall()
+        {where}
+    """
 
-    atrasadas_count = conn.execute("""
-        SELECT COUNT(*) FROM demandas 
-        WHERE status = 'Aberta' AND prazo IS NOT NULL AND prazo < date('now')
-    """).fetchone()[0]
+    total      = conn.execute(f"SELECT COUNT(*) FROM demandas d LEFT JOIN prioridades p ON d.id_prioridade = p.id {where}", params).fetchone()[0]
+    abertas    = conn.execute(f"SELECT COUNT(*) FROM demandas d LEFT JOIN prioridades p ON d.id_prioridade = p.id {where} {and_or_where} d.status = 'Aberta'", params).fetchone()[0]
+    concluidas = conn.execute(f"SELECT COUNT(*) FROM demandas d LEFT JOIN prioridades p ON d.id_prioridade = p.id {where} {and_or_where} d.status = 'Concluída'", params).fetchone()[0]
 
-    atrasadas_list = conn.execute("""
-        SELECT d.*, p.valor as prioridade_nome 
-        FROM demandas d
-        LEFT JOIN prioridades p ON d.id_prioridade = p.id
-        WHERE d.status = 'Aberta' AND d.prazo IS NOT NULL AND d.prazo < date('now')
-        ORDER BY d.prazo ASC
-    """).fetchall()
+    atrasadas_count = conn.execute(
+        f"SELECT COUNT(*) FROM demandas d LEFT JOIN prioridades p ON d.id_prioridade = p.id {where} {and_or_where} d.status = 'Aberta' AND d.prazo IS NOT NULL AND d.prazo < date('now')", params
+    ).fetchone()[0]
 
-    por_responsavel = conn.execute("""
-        SELECT solicitante, COUNT(*) as total
-        FROM demandas
-        WHERE status = 'Aberta'
-        GROUP BY solicitante
-        ORDER BY total DESC
-    """).fetchall()
+    atrasadas_list = conn.execute(
+        f"{base_query} {and_or_where} d.status = 'Aberta' AND d.prazo IS NOT NULL AND d.prazo < date('now') ORDER BY d.prazo ASC", params
+    ).fetchall()
 
-    tempo_medio = conn.execute("""
+    criticas = conn.execute(
+        f"{base_query} {and_or_where} p.valor = 'Alta' AND d.status = 'Aberta' ORDER BY d.data_criacao ASC", params
+    ).fetchall()
+
+    por_responsavel = conn.execute(
+        f"SELECT d.solicitante, COUNT(*) as total FROM demandas d LEFT JOIN prioridades p ON d.id_prioridade = p.id {where} {and_or_where} d.status = 'Aberta' GROUP BY d.solicitante ORDER BY total DESC", params
+    ).fetchall()
+
+    tempo_medio = conn.execute(f"""
         SELECT AVG(
-            julianday(substr(data_criacao,7,4)||'-'||substr(data_criacao,4,2)||'-'||substr(data_criacao,1,2)) -
-            julianday(substr(data_criacao,7,4)||'-'||substr(data_criacao,4,2)||'-'||substr(data_criacao,1,2))
-        ) FROM demandas WHERE status = 'Concluída'
-    """).fetchone()[0]
+            julianday(substr(d.data_criacao,7,4)||'-'||substr(d.data_criacao,4,2)||'-'||substr(d.data_criacao,1,2)) -
+            julianday(substr(d.data_criacao,7,4)||'-'||substr(d.data_criacao,4,2)||'-'||substr(d.data_criacao,1,2))
+        ) FROM demandas d LEFT JOIN prioridades p ON d.id_prioridade = p.id
+        {where} {and_or_where} d.status = 'Concluída'
+    """, params).fetchone()[0]
+
+    responsaveis = conn.execute("SELECT DISTINCT solicitante FROM demandas WHERE solicitante IS NOT NULL ORDER BY solicitante").fetchall()
 
     conn.close()
 
-    pct_abertas = round((abertas / total * 100), 1) if total else 0
+    pct_abertas    = round((abertas / total * 100), 1) if total else 0
     pct_concluidas = round((concluidas / total * 100), 1) if total else 0
-    pct_atrasadas = round((atrasadas_count / total * 100), 1) if total else 0
+    pct_atrasadas  = round((atrasadas_count / total * 100), 1) if total else 0
 
     return render_template('dashboard.html',
         total=total,
@@ -210,7 +265,24 @@ def dashboard():
         pct_abertas=pct_abertas,
         pct_concluidas=pct_concluidas,
         pct_atrasadas=pct_atrasadas,
+        responsaveis=responsaveis,
+        f_de=f_de,
+        f_ate=f_ate,
+        f_responsavel=f_responsavel,
+        f_prioridade=f_prioridade,
+        f_status=f_status,
     )
+
+
+@app.route('/logs')
+@login_required
+def logs():
+    conn = get_db()
+    entries = conn.execute(
+        'SELECT * FROM logs ORDER BY id DESC LIMIT 200'
+    ).fetchall()
+    conn.close()
+    return render_template('logs.html', logs=entries)
 
 
 @app.route('/exportar/atrasadas')

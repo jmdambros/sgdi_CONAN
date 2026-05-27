@@ -55,6 +55,16 @@ def init_db():
         cursor.execute("INSERT INTO prioridades (peso, valor) VALUES (1, 'Baixa'), (2, 'Média'), (3, 'Alta')")
         print("Prioridades configuradas.")
 
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario TEXT,
+        acao TEXT NOT NULL,
+        detalhe TEXT,
+        ip TEXT,
+        data TEXT DEFAULT (strftime('%d/%m/%Y %H:%M', 'now', 'localtime'))
+    );
+    ''')
     conn.commit()
     conn.close()
     print("Banco de dados pronto!")

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2 style="margin: 0;">Logs de Auditoria</h2>
+    <span style="font-size: 13px; color: #888;">Últimas 200 ações</span>
+</div>
+
+<table border="1" cellpadding="10" cellspacing="0" width="100%" id="tabela-logs">
+    <thead>
+        <tr bgcolor="#cccccc">
+            <th>Data</th>
+            <th>Usuário</th>
+            <th>Ação</th>
+            <th>Detalhe</th>
+            <th>IP</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td style="white-space: nowrap;">{{ log['data'] }}</td>
+            <td>{{ log['usuario'] }}</td>
+            <td>
+                {% if log['acao'] == 'LOGIN' %}
+                    <span style="background:#EAF3DE; color:#3B6D11; font-size:12px; font-weight:500; padding:3px 10px; border-radius:12px;">LOGIN</span>
+                {% elif log['acao'] == 'LOGIN_FALHOU' %}
+                    <span style="background:#FCEBEB; color:#A32D2D; font-size:12px; font-weight:500; padding:3px 10px; border-radius:12px;">LOGIN FALHOU</span>
+                {% elif log['acao'] == 'LOGOUT' %}
+                    <span style="background:#f0f0f0; color:#555; font-size:12px; font-weight:500; padding:3px 10px; border-radius:12px;">LOGOUT</span>
+                {% elif log['acao'] == 'CRIAR_DEMANDA' %}
+                    <span style="background:#E3F2FD; color:#1565C0; font-size:12px; font-weight:500; padding:3px 10px; border-radius:12px;">CRIAR DEMANDA</span>
+                {% elif log['acao'] == 'DELETAR_DEMANDA' %}
+                    <span style="background:#FCEBEB; color:#A32D2D; font-size:12px; font-weight:500; padding:3px 10px; border-radius:12px;">DELETAR DEMANDA</span>
+                {% elif log['acao'] == 'ADICIONAR_COMENTARIO' %}
+                    <span style="background:#FAEEDA; color:#854F0B; font-size:12px; font-weight:500; padding:3px 10px; border-radius:12px;">COMENTÁRIO</span>
+                {% elif log['acao'] == 'REGISTRO' %}
+                    <span style="background:#EAF3DE; color:#3B6D11; font-size:12px; font-weight:500; padding:3px 10px; border-radius:12px;">REGISTRO</span>
+                {% else %}
+                    <span style="background:#f0f0f0; color:#555; font-size:12px; font-weight:500; padding:3px 10px; border-radius:12px;">{{ log['acao'] }}</span>
+                {% endif %}
+            </td>
+            <td style="color: #666; font-size: 13px;">{{ log['detalhe'] or '—' }}</td>
+            <td style="color: #aaa; font-size: 12px;">{{ log['ip'] or '—' }}</td>
+        </tr>
+        {% endfor %}
+
+        {% if not logs %}
+        <tr>
+            <td colspan="5" align="center" style="color: #aaa;">Nenhum log registrado ainda.</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+{% endblock %}
